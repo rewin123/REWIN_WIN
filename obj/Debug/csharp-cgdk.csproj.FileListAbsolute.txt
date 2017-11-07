@@ -1,0 +1,6 @@
+\\Mac\Home\Downloads\csharp-cgdk\bin\Debug\csharp-cgdk.exe.config
+\\Mac\Home\Downloads\csharp-cgdk\bin\Debug\csharp-cgdk.exe
+\\Mac\Home\Downloads\csharp-cgdk\bin\Debug\csharp-cgdk.pdb
+\\Mac\Home\Downloads\csharp-cgdk\obj\Debug\csharp-cgdk.csprojResolveAssemblyReference.cache
+\\Mac\Home\Downloads\csharp-cgdk\obj\Debug\csharp-cgdk.exe
+\\Mac\Home\Downloads\csharp-cgdk\obj\Debug\csharp-cgdk.pdb
