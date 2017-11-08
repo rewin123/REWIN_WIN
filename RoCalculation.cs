@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk.Model;
 
 namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
 {
@@ -23,12 +24,24 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             return map;
         }
 
+        public static int[,] Calc(ref Dictionary<long, LocalVehicle> dic, VehicleType type)
+        {
+            int count = 1024 / step;
+
+            int[,] map = new int[count, count];
+            foreach (KeyValuePair<long, LocalVehicle> pair in dic)
+            {
+                LocalVehicle veh = pair.Value;
+                if (veh.type == type)
+                {
+                    map[(int)veh.X / step, (int)veh.Y / step]++;
+                }
+            }
+            return map;
+        }
+
         public static void DrawOneRo(ref Graphics gr, int[,] cals, Color color)
         {
-            int r = color.R;
-            int g = color.G;
-            int b = color.B;
-
             int max = cals.GetMax();
             
             int count = 1024 / 20;
