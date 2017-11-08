@@ -26,7 +26,6 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             for(int i = 0;i < news.Length;i++)
             {
                 vehicles.Add(news[i].Id, new LocalVehicle(ref news[i]));
-                
             }
 
             VehicleUpdate[] updates = world.VehicleUpdates;
@@ -44,19 +43,61 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
         {
             Bitmap map = new Bitmap((int)world.Width, (int)world.Height);
             Graphics gr = Graphics.FromImage(map);
-            Brush enemy = Brushes.Red;
-            Brush my = Brushes.Green;
-            float radius = (float)game.VehicleRadius;
-            foreach(KeyValuePair<long,LocalVehicle> pair in vehicles)
-            {
-                LocalVehicle veh = pair.Value;
-                
-                gr.FillEllipse(veh.playerID == myPlayerID ? my : enemy, (float)(veh.X - radius), (float)(veh.Y - radius), radius, radius);
-            }
+
+            DrawTerrains(ref world, ref game, myPlayerID, ref gr);
+            DrawVehicles(ref world, ref game, myPlayerID, ref gr);
 
             pictureBox1.Image = map;
             Update();
         }
-        
+
+        void DrawVehicles(ref World world, ref Game game, long myPlayerID, ref Graphics gr)
+        {
+            Brush enemy = Brushes.Red;
+            Brush my = Brushes.Black;
+            float radius = (float)game.VehicleRadius;
+            foreach (KeyValuePair<long, LocalVehicle> pair in vehicles)
+            {
+                LocalVehicle veh = pair.Value;
+
+                gr.FillEllipse(veh.playerID == myPlayerID ? my : enemy, (float)(veh.X - radius), (float)(veh.Y - radius), radius, radius);
+            }
+        }
+
+        void DrawTerrains(ref World world, ref Game game, long myPlayerID, ref Graphics gr)
+        {
+            int width = world.TerrainByCellXY.Length;
+            int height = world.TerrainByCellXY[0].Length;
+
+            int step = 32;
+
+            TerrainType[][] terrains = world.TerrainByCellXY;
+
+            Brush swamp = Brushes.Gray;
+            Brush forest = Brushes.DarkOliveGreen;
+            
+
+            for(int x = 0;x < width;x++)
+            {
+                for(int y = 0;y < height;y++)
+                {
+                    Brush draw = null;
+                    switch(terrains[x][y])
+                    {
+                        case TerrainType.Forest:
+                            draw = forest;
+                            break;
+                        case TerrainType.Swamp:
+                            draw = swamp;
+                            break;
+                    }
+
+                    if(terrains[x][y] != TerrainType.Plain)
+                    {
+                        gr.FillRectangle(draw, x * step, y * step, step, step);
+                    }
+                }
+            }
+        }
     }
 }
