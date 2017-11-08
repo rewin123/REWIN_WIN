@@ -2,7 +2,19 @@ using Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk.Model;
 
 namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk {
     public sealed class MyStrategy : IStrategy {
+
+        Visual visual;
+
+        public MyStrategy()
+        {
+            visual = new Visual();
+            visual.Show();
+        }
+
         public void Move(Player me, World world, Game game, Move move) {
+
+            visual.UpdateWorld(ref world, ref game, me.Id);
+
             if (world.TickIndex == 0) {
                 move.Action = ActionType.ClearAndSelect;
                 move.Right = world.Width;

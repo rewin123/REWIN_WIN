@@ -4,3 +4,12 @@
 \\Mac\Home\Downloads\csharp-cgdk\obj\Debug\csharp-cgdk.csprojResolveAssemblyReference.cache
 \\Mac\Home\Downloads\csharp-cgdk\obj\Debug\csharp-cgdk.exe
 \\Mac\Home\Downloads\csharp-cgdk\obj\Debug\csharp-cgdk.pdb
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\bin\Debug\csharp-cgdk.exe.config
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\bin\Debug\csharp-cgdk.exe
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\bin\Debug\csharp-cgdk.pdb
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\obj\Debug\csharp-cgdk.csprojResolveAssemblyReference.cache
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\obj\Debug\Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk.Visual.resources
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\obj\Debug\csharp-cgdk.csproj.GenerateResource.Cache
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\obj\Debug\csharp-cgdk.csproj.CoreCompileInputs.cache
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\obj\Debug\csharp-cgdk.exe
+C:\Users\rewin\AppData\Local\Screeps\scripts\127_0_0_1___21025\orders\REWIN_WIN\obj\Debug\csharp-cgdk.pdb
