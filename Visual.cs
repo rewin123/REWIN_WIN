@@ -5,41 +5,92 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk.Model;
 
 namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
 {
+    enum DrawType { Vehicles, Concentrations};
     public partial class Visual : Form
     {
+        DrawType drawType = DrawType.Concentrations;
         Dictionary<long, LocalVehicle> vehicles = new Dictionary<long, LocalVehicle>();
         public Visual()
         {
             InitializeComponent();
         }
 
-        public void UpdateWorld(ref World world,ref Game game, long myPlayerID)
+        public void UpdateWorldLocal()
         {
             Vehicle[] news = world.NewVehicles;
 
-            for(int i = 0;i < news.Length;i++)
+            for (int i = 0; i < news.Length; i++)
             {
                 vehicles.Add(news[i].Id, new LocalVehicle(ref news[i]));
             }
 
             VehicleUpdate[] updates = world.VehicleUpdates;
-            for(int i = 0;i < updates.Length;i++)
+            for (int i = 0; i < updates.Length; i++)
             {
                 vehicles[updates[i].Id].Update(ref updates[i]);
                 if (updates[i].Durability == 0)
                     vehicles.Remove(updates[i].Id);
             }
 
-            Draw(ref world, ref game, myPlayerID);
+            switch (drawType)
+            {
+                case DrawType.Vehicles:
+                    DrawV(ref world, ref game, myPlayerID);
+                    break;
+                case DrawType.Concentrations:
+                    DrawRo(ref world, ref game, myPlayerID);
+                    break;
+            }
+
         }
 
-        public void Draw(ref World world, ref Game game, long myPlayerID)
+        World world;
+        Game game;
+        long myPlayerID;
+
+        public void UpdateWorld(ref World world, ref Game game, long myPlayerID)
+        {
+            Vehicle[] news = world.NewVehicles;
+
+            for (int i = 0; i < news.Length; i++)
+            {
+                vehicles.Add(news[i].Id, new LocalVehicle(ref news[i]));
+            }
+
+            VehicleUpdate[] updates = world.VehicleUpdates;
+            for (int i = 0; i < updates.Length; i++)
+            {
+                vehicles[updates[i].Id].Update(ref updates[i]);
+                if (updates[i].Durability == 0)
+                    vehicles.Remove(updates[i].Id);
+            }
+
+            switch (drawType)
+            {
+                case DrawType.Vehicles:
+                    DrawV(ref world, ref game, myPlayerID);
+                    break;
+                case DrawType.Concentrations:
+                    DrawRo(ref world, ref game, myPlayerID);
+                    break;
+            }
+
+        }
+
+        /// <summary>
+        /// Рисует машины и типы земли
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="game"></param>
+        /// <param name="myPlayerID"></param>
+        public void DrawV(ref World world, ref Game game, long myPlayerID)
         {
             Bitmap map = new Bitmap((int)world.Width, (int)world.Height);
             Graphics gr = Graphics.FromImage(map);
@@ -48,9 +99,20 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             DrawVehicles(ref world, ref game, myPlayerID, ref gr);
 
             pictureBox1.Image = map;
+            
             Update();
         }
 
+        delegate void OneAction();
+
+
+        /// <summary>
+        /// Рисует машины
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="game"></param>
+        /// <param name="myPlayerID"></param>
+        /// <param name="gr"></param>
         void DrawVehicles(ref World world, ref Game game, long myPlayerID, ref Graphics gr)
         {
             Brush enemy = Brushes.Red;
@@ -64,6 +126,13 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             }
         }
 
+        /// <summary>
+        /// Рисует типы земли
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="game"></param>
+        /// <param name="myPlayerID"></param>
+        /// <param name="gr"></param>
         void DrawTerrains(ref World world, ref Game game, long myPlayerID, ref Graphics gr)
         {
             int width = world.TerrainByCellXY.Length;
@@ -75,14 +144,14 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
 
             Brush swamp = Brushes.Gray;
             Brush forest = Brushes.DarkOliveGreen;
-            
 
-            for(int x = 0;x < width;x++)
+
+            for (int x = 0; x < width; x++)
             {
-                for(int y = 0;y < height;y++)
+                for (int y = 0; y < height; y++)
                 {
                     Brush draw = null;
-                    switch(terrains[x][y])
+                    switch (terrains[x][y])
                     {
                         case TerrainType.Forest:
                             draw = forest;
@@ -92,12 +161,29 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
                             break;
                     }
 
-                    if(terrains[x][y] != TerrainType.Plain)
+                    if (terrains[x][y] != TerrainType.Plain)
                     {
                         gr.FillRectangle(draw, x * step, y * step, step, step);
                     }
                 }
             }
+        }
+
+        void DrawRo(ref World world, ref Game game, long myPlayerID)
+        {
+            Bitmap map = new Bitmap((int)world.Width, (int)world.Height);
+            Graphics gr = Graphics.FromImage(map);
+
+            int[,] data = RoCalculation.Calc(ref vehicles);
+            RoCalculation.DrawOneRo(ref gr, data, Color.Green);
+
+            pictureBox1.Image = map;
+            Update();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            drawType = DrawType.Concentrations;
         }
     }
 }
