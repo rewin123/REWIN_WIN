@@ -13,25 +13,21 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk {
 
         public void Move(Player me, World world, Game game, Move move) {
 
-           
-
-            visual.UpdateWorld(ref world, ref game, me.Id);
 
             if (world.TickIndex == 0) {
                 
                 move.Action = ActionType.ClearAndSelect;
                 move.Right = world.Width;
                 move.Bottom = world.Height;
-                return;
             }
-
-            if (world.TickIndex == 1) {
+            else if (world.TickIndex == 1) {
                 move.Action = ActionType.Move;
                 move.X = world.Width / 2.0D;
                 move.Y = world.Height / 2.0D;
             }
 
-            
+
+            visual.UpdateWorld(ref world, ref game, me.Id, ref move);
         }
     }
 }

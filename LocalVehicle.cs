@@ -14,6 +14,9 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
         public long playerID;
         public VehicleType type;
 
+        public double XSpeed = 0;
+        public double YSpeed = 0;
+
         public LocalVehicle()
         {
 
@@ -25,6 +28,14 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             Y = v.Y;
             playerID = v.PlayerId;
             type = v.Type;
+        }
+
+        public LocalVehicle(ref LocalVehicle v)
+        {
+            X = v.X;
+            Y = v.Y;
+            playerID = v.playerID;
+            type = v.type;
         }
 
         public void Update(ref VehicleUpdate update)

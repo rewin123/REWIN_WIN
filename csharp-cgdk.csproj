@@ -93,6 +93,7 @@
     <Compile Include="Model\World.cs" />
     <Compile Include="IStrategy.cs" />
     <Compile Include="MyStrategy.cs" />
+    <Compile Include="PredictionWorld.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RemoteProcessClient.cs" />
     <Compile Include="RoCalculation.cs" />

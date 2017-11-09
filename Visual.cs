@@ -12,17 +12,18 @@ using Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk.Model;
 
 namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
 {
-    enum DrawType { Vehicles, Concentrations};
+    enum DrawType { Vehicles, Concentrations, Predict};
     public partial class Visual : Form
     {
-        DrawType drawType = DrawType.Concentrations;
+        DrawType drawType = DrawType.Predict;
         Dictionary<long, LocalVehicle> vehicles = new Dictionary<long, LocalVehicle>();
+        PredictionWorld prediction;
         public Visual()
         {
             InitializeComponent();
         }
 
-        public void UpdateWorldLocal()
+        public void UpdateWorld(ref World world, ref Game game, long myPlayerID, ref Move m)
         {
             Vehicle[] news = world.NewVehicles;
 
@@ -30,6 +31,12 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             {
                 vehicles.Add(news[i].Id, new LocalVehicle(ref news[i]));
             }
+
+            if (prediction == null)
+            {
+                prediction = new PredictionWorld(ref game, world.TerrainByCellXY, vehicles);
+            }
+            prediction.UpdateMove(m, ref game);
 
             VehicleUpdate[] updates = world.VehicleUpdates;
             for (int i = 0; i < updates.Length; i++)
@@ -47,38 +54,8 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
                 case DrawType.Concentrations:
                     DrawRo(ref world, ref game, myPlayerID);
                     break;
-            }
-
-        }
-
-        World world;
-        Game game;
-        long myPlayerID;
-
-        public void UpdateWorld(ref World world, ref Game game, long myPlayerID)
-        {
-            Vehicle[] news = world.NewVehicles;
-
-            for (int i = 0; i < news.Length; i++)
-            {
-                vehicles.Add(news[i].Id, new LocalVehicle(ref news[i]));
-            }
-
-            VehicleUpdate[] updates = world.VehicleUpdates;
-            for (int i = 0; i < updates.Length; i++)
-            {
-                vehicles[updates[i].Id].Update(ref updates[i]);
-                if (updates[i].Durability == 0)
-                    vehicles.Remove(updates[i].Id);
-            }
-
-            switch (drawType)
-            {
-                case DrawType.Vehicles:
-                    DrawV(ref world, ref game, myPlayerID);
-                    break;
-                case DrawType.Concentrations:
-                    DrawRo(ref world, ref game, myPlayerID);
+                case DrawType.Predict:
+                    DrawPredic(ref world, ref game, myPlayerID);
                     break;
             }
 
@@ -181,9 +158,34 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             Update();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        void DrawPredic(ref World world, ref Game game, long myPlayerID)
+        {
+            Bitmap map = new Bitmap((int)world.Width, (int)world.Height);
+            Graphics gr = Graphics.FromImage(map);
+
+            prediction.Predict();
+            DrawTerrains(ref world, ref game, myPlayerID, ref gr);
+            DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, prediction.vehicles, Brushes.Red);
+            DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, vehicles, Brushes.Black);
+
+            pictureBox1.Image = map;
+            Update();
+        }
+
+        private void Button1_Click(object sender, EventArgs e)
         {
             drawType = DrawType.Concentrations;
+        }
+
+        void DrawVehiclesColor(ref World world, ref Game game, long myPlayerID, ref Graphics gr, Dictionary<long,LocalVehicle> vehicles, Brush color)
+        {
+            float radius = (float)game.VehicleRadius;
+            foreach (KeyValuePair<long, LocalVehicle> pair in vehicles)
+            {
+                LocalVehicle veh = pair.Value;
+
+                gr.FillEllipse(color, (float)(veh.X - radius), (float)(veh.Y - radius), radius, radius);
+            }
         }
     }
 }
