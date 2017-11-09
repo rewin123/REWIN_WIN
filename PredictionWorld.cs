@@ -14,18 +14,21 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
         public Dictionary<long, LocalVehicle> ground_vehicles = new Dictionary<long, LocalVehicle>();
         public Dictionary<long, LocalVehicle> air_vehicles = new Dictionary<long, LocalVehicle>();
 
+        public Dictionary<long, long> scores = new Dictionary<long, long>();
+
         int collision_step;
         int collision_count;
         float radius;
         float radius2;
         Dictionary<long, LocalVehicle>[,] ground_groups;
+        Dictionary<long, LocalVehicle>[,] air_groups;
 
         public float[,] speedMapGround;
         public float[,] speedMapAir;
         int count;
         int step;
 
-        public PredictionWorld(ref Game game, TerrainType[][] map, WeatherType[][] weather,Dictionary<long,LocalVehicle> input)
+        public PredictionWorld(ref Game game, ref World world, TerrainType[][] map, WeatherType[][] weather,Dictionary<long,LocalVehicle> input)
         {
             count = map.Length;
             step = 1024 / count;
@@ -34,7 +37,13 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             SetupTerrain(ref game, map);
             SetupWeather(ref game, weather);
             SetupGroundCollisionGroups(ref game);
+            SetupAirCollisionGroups(ref game);
             PutAllVehiclesInGroups();
+
+            for (int i = 0; i < world.Players.Length; i++)
+            {
+                scores.Add(world.Players[i].Id, 0);
+            }
         }
 
         void SetupGroundCollisionGroups(ref Game game)
@@ -54,12 +63,35 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             }
         }
 
+        void SetupAirCollisionGroups(ref Game game)
+        {
+            collision_step = (int)(Math.Pow(Math.Log(game.VehicleRadius, 2) + 1, 2));
+            collision_count = 1024 / collision_step;
+            radius = (float)game.VehicleRadius;
+            radius2 = radius * radius;
+            air_groups = new Dictionary<long, LocalVehicle>[collision_count + 2, collision_count + 2];
+
+            for (int x = 0; x < collision_count + 2; x++)
+            {
+                for (int y = 0; y < collision_count + 2; y++)
+                {
+                    air_groups[x, y] = new Dictionary<long, LocalVehicle>();
+                }
+            }
+        }
+
         void PutAllVehiclesInGroups()
         {
             foreach (KeyValuePair<long, LocalVehicle> pair in ground_vehicles)
             {
                 LocalVehicle veh = pair.Value;
                 ground_groups[(int)(veh.X / collision_step), (int)(veh.Y / collision_step)].Add(pair.Key, veh);
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_vehicles)
+            {
+                LocalVehicle veh = pair.Value;
+                air_groups[(int)(veh.X / collision_step), (int)(veh.Y / collision_step)].Add(pair.Key, veh);
             }
         }
 
@@ -138,6 +170,11 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             {
                 pair.Value.moved = true;
             }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_vehicles)
+            {
+                pair.Value.moved = true;
+            }
         }
 
         /// <summary>
@@ -162,7 +199,7 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
                             float factor = speedMapGround[(int)(veh.X / step), (int)(veh.Y / step)];
                             veh.X += veh.XSpeed * factor;
                             veh.Y += veh.YSpeed * factor;
-                            if (TestCollide(veh.X, veh.Y))
+                            if (TestCollideGround(veh.X, veh.Y))
                             {
                                 veh.X -= veh.XSpeed * factor;
                                 veh.Y -= veh.YSpeed * factor;
@@ -177,20 +214,42 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
                     }
                 }
             } while (interactions != 0);
-
-            foreach (KeyValuePair<long, LocalVehicle> pair in air_vehicles)
+            
+            do
             {
-                LocalVehicle veh = pair.Value;
-                if (veh.X < 1024 && veh.Y < 1024)
+                interactions = 0;
+                foreach (KeyValuePair<long, LocalVehicle> pair in air_vehicles)
                 {
-                    float factor = speedMapAir[(int)(veh.X / step), (int)(veh.Y / step)];
-                    veh.X += veh.XSpeed * factor;
-                    veh.Y += veh.YSpeed * factor;
+                    if (pair.Value.moved)
+                    {
+                        LocalVehicle veh = pair.Value;
+                        if (veh.X < 1024 && veh.Y < 1024)
+                        {
+                            air_groups[(int)(veh.X / collision_step), (int)(veh.Y / collision_step)].Remove(pair.Key);
+
+                            float factor = speedMapGround[(int)(veh.X / step), (int)(veh.Y / step)];
+                            veh.X += veh.XSpeed * factor;
+                            veh.Y += veh.YSpeed * factor;
+                            if (TestCollideAir(veh.X, veh.Y,veh.playerID))
+                            {
+                                veh.X -= veh.XSpeed * factor;
+                                veh.Y -= veh.YSpeed * factor;
+                            }
+                            else
+                            {
+                                interactions++;
+                                veh.moved = false;
+                            }
+                            air_groups[(int)(veh.X / collision_step), (int)(veh.Y / collision_step)].Add(pair.Key, veh);
+                        }
+                    }
                 }
-            }
+            } while (interactions != 0);
+
+            
         }
         
-        bool TestCollide(float x0, float y0)
+        bool TestCollideGround(float x0, float y0)
         {
             int x = (int)(x0 / collision_step);
             int y = (int)(y0 / collision_step);
@@ -275,6 +334,97 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
                 dx = x0 - v.X;
                 dy = y0 - v.Y;
                 if (dx * dx + dy * dy <= radius2)
+                    return true;
+            }
+
+            return false;
+        }
+
+        bool TestCollideAir(float x0, float y0, long playerId)
+        {
+            int x = (int)(x0 / collision_step);
+            int y = (int)(y0 / collision_step);
+            float dx;
+            float dy;
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x, y])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
+                    return true;
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x - 1, y])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
+                    return true;
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x + 1, y])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
+                    return true;
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x, y - 1])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
+                    return true;
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x, y + 1])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
+                    return true;
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x - 1, y - 1])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
+                    return true;
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x - 1, y + 1])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
+                    return true;
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x + 1, y - 1])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
+                    return true;
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_groups[x + 1, y + 1])
+            {
+                LocalVehicle v = pair.Value;
+                dx = x0 - v.X;
+                dy = y0 - v.Y;
+                if (dx * dx + dy * dy <= radius2 && v.playerID == playerId)
                     return true;
             }
 

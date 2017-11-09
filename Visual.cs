@@ -34,7 +34,7 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
 
             if (prediction == null)
             {
-                prediction = new PredictionWorld(ref game, world.TerrainByCellXY, world.WeatherByCellXY, vehicles);
+                prediction = new PredictionWorld(ref game, ref world, world.TerrainByCellXY, world.WeatherByCellXY, vehicles);
             }
             prediction.UpdateMove(m, ref game, myPlayerID);
 
