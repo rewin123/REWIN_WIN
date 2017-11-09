@@ -11,37 +11,116 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
     /// </summary>
     class PredictionWorld
     {
-        public Dictionary<long, LocalVehicle> vehicles = new Dictionary<long, LocalVehicle>();
-        public double[,] speedMap;
+        public Dictionary<long, LocalVehicle> ground_vehicles = new Dictionary<long, LocalVehicle>();
+        public Dictionary<long, LocalVehicle> air_vehicles = new Dictionary<long, LocalVehicle>();
+
+        int collision_step;
+        int collision_count;
+        Dictionary<long, LocalVehicle>[,] ground_groups;
+
+        public double[,] speedMapGround;
+        public double[,] speedMapAir;
         int count;
         int step;
 
-        public PredictionWorld(ref Game game, TerrainType[][] map,Dictionary<long,LocalVehicle> input)
+        public PredictionWorld(ref Game game, TerrainType[][] map, WeatherType[][] weather,Dictionary<long,LocalVehicle> input)
         {
-            foreach(KeyValuePair<long,LocalVehicle> pair in input)
-            {
-                LocalVehicle v = pair.Value;
-                vehicles.Add(pair.Key,new LocalVehicle(ref v));
-            }
-
-            speedMap = new double[map.Length, map.Length];
             count = map.Length;
             step = 1024 / count;
 
-            for(int x = 0;x < count;x++)
+            SetupVehicles(ref input);
+            SetupTerrain(ref game, map);
+            SetupWeather(ref game, weather);
+            SetupGroundCollisionGroups(ref game);
+        }
+
+        void SetupGroundCollisionGroups(ref Game game)
+        {
+            collision_step = (int)(Math.Pow(Math.Log(game.VehicleRadius,2) + 1,2));
+            collision_count = 1024 / collision_step;
+            ground_groups = new Dictionary<long, LocalVehicle>[collision_count + 1, collision_count + 1];
+
+            for(int x = 0;x < collision_count + 1;x++)
             {
-                for(int y = 0;y < count;y++)
+                for(int y = 0;y < collision_count + 1;y++)
                 {
-                    switch(map[x][y])
+                    ground_groups[x, y] = new Dictionary<long, LocalVehicle>();
+                }
+            }
+        }
+
+        void PutAllVehiclesInGroups()
+        {
+            foreach (KeyValuePair<long, LocalVehicle> pair in ground_vehicles)
+            {
+                LocalVehicle veh = pair.Value;
+                ground_groups[(int)(veh.X / collision_step), (int)(veh.Y / collision_step)].Add(pair.Key, veh);
+            }
+        }
+
+
+
+        void SetupVehicles(ref Dictionary<long, LocalVehicle> input)
+        {
+            
+            foreach (KeyValuePair<long, LocalVehicle> pair in input)
+            {
+                LocalVehicle v = pair.Value;
+                switch (v.type)
+                {
+                    case VehicleType.Arrv:
+                    case VehicleType.Ifv:
+                    case VehicleType.Tank:
+                        ground_vehicles.Add(pair.Key, new LocalVehicle(ref v));
+                        break;
+                    case VehicleType.Helicopter:
+                    case VehicleType.Fighter:
+                        air_vehicles.Add(pair.Key, new LocalVehicle(ref v));
+                        break;
+                }
+            }
+        }
+
+        void SetupTerrain(ref Game game,TerrainType[][] map)
+        {
+            speedMapGround = new double[map.Length, map.Length];
+            for (int x = 0; x < count; x++)
+            {
+                for (int y = 0; y < count; y++)
+                {
+                    switch (map[x][y])
                     {
                         case TerrainType.Plain:
-                            speedMap[x, y] = game.PlainTerrainSpeedFactor;
+                            speedMapGround[x, y] = game.PlainTerrainSpeedFactor;
                             break;
                         case TerrainType.Swamp:
-                            speedMap[x, y] = game.SwampTerrainSpeedFactor;
+                            speedMapGround[x, y] = game.SwampTerrainSpeedFactor;
                             break;
                         case TerrainType.Forest:
-                            speedMap[x, y] = game.ForestTerrainSpeedFactor;
+                            speedMapGround[x, y] = game.ForestTerrainSpeedFactor;
+                            break;
+                    }
+                }
+            }
+        }
+
+        void SetupWeather(ref Game game, WeatherType[][] weather)
+        {
+            speedMapAir = new double[weather.Length, weather.Length];
+            for (int x = 0; x < count; x++)
+            {
+                for (int y = 0; y < count; y++)
+                {
+                    switch (weather[x][y])
+                    {
+                        case WeatherType.Clear:
+                            speedMapAir[x, y] = game.ClearWeatherSpeedFactor;
+                            break;
+                        case WeatherType.Cloud:
+                            speedMapAir[x, y] = game.CloudWeatherSpeedFactor;
+                            break;
+                        case WeatherType.Rain:
+                            speedMapAir[x, y] = game.RainWeatherSpeedFactor;
                             break;
                     }
                 }
@@ -53,18 +132,46 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
         /// </summary>
         public void Predict()
         {
-            foreach (KeyValuePair<long, LocalVehicle> pair in vehicles)
+            foreach (KeyValuePair<long, LocalVehicle> pair in ground_vehicles)
             {
                 LocalVehicle veh = pair.Value;
                 if (veh.X < 1024 && veh.Y < 1024)
                 {
-                    double factor = speedMap[(int)(veh.X / step), (int)(veh.Y / step)];
+                    ground_groups[(int)(veh.X / collision_step), (int)(veh.Y / collision_step)].Remove(pair.Key);
+
+                    double factor = speedMapGround[(int)(veh.X / step), (int)(veh.Y / step)];
+                    veh.X += veh.XSpeed * factor;
+                    veh.Y += veh.YSpeed * factor;
+                    ground_groups[(int)(veh.X / collision_step), (int)(veh.Y / collision_step)].Add(pair.Key, veh);
+                }
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_vehicles)
+            {
+                LocalVehicle veh = pair.Value;
+                if (veh.X < 1024 && veh.Y < 1024)
+                {
+                    double factor = speedMapAir[(int)(veh.X / step), (int)(veh.Y / step)];
                     veh.X += veh.XSpeed * factor;
                     veh.Y += veh.YSpeed * factor;
                 }
             }
         }
+        
 
+        public int[,] VehRo()
+        {
+            int[,] map = new int[collision_count, collision_count];
+            for (int x = 0; x < collision_count; x++)
+            {
+                for (int y = 0; y < collision_count; y++)
+                {
+                    map[x, y] = ground_groups[x, y].Count;
+                }
+            }
+            return map;
+        }
+        
         List<LocalVehicle> selected = new List<LocalVehicle>();
 
         public void UpdateMove(Move m, ref Game game)
@@ -83,7 +190,14 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
         void ClearAndSelect(double left, double right, double top, double bottom)
         {
             selected.Clear();
-            foreach (KeyValuePair<long, LocalVehicle> pair in vehicles)
+            foreach (KeyValuePair<long, LocalVehicle> pair in ground_vehicles)
+            {
+                LocalVehicle v = pair.Value;
+                if (v.X >= left && v.X <= right && v.Y <= bottom && v.Y >= top)
+                    selected.Add(v);
+            }
+
+            foreach (KeyValuePair<long, LocalVehicle> pair in air_vehicles)
             {
                 LocalVehicle v = pair.Value;
                 if (v.X >= left && v.X <= right && v.Y <= bottom && v.Y >= top)
@@ -110,9 +224,9 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             yspeed.Add(VehicleType.Fighter, Y * game.FighterSpeed / abs);
             yspeed.Add(VehicleType.Helicopter, Y * game.HelicopterSpeed / abs);
 
-            foreach (KeyValuePair<long, LocalVehicle> pair in vehicles)
+            foreach (LocalVehicle pair in selected)
             {
-                LocalVehicle v = pair.Value;
+                LocalVehicle v = pair;
                 v.XSpeed = xspeed[v.type];
                 v.YSpeed = yspeed[v.type];
             }

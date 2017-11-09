@@ -28,6 +28,7 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             Y = v.Y;
             playerID = v.PlayerId;
             type = v.Type;
+            
         }
 
         public LocalVehicle(ref LocalVehicle v)

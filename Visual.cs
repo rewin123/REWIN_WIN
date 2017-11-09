@@ -12,10 +12,10 @@ using Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk.Model;
 
 namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
 {
-    enum DrawType { Vehicles, Concentrations, Predict};
+    enum DrawType { Vehicles, Concentrations, Predict, PredictRo};
     public partial class Visual : Form
     {
-        DrawType drawType = DrawType.Predict;
+        DrawType drawType = DrawType.PredictRo;
         Dictionary<long, LocalVehicle> vehicles = new Dictionary<long, LocalVehicle>();
         PredictionWorld prediction;
         public Visual()
@@ -27,6 +27,8 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
         {
             Vehicle[] news = world.NewVehicles;
 
+            
+
             for (int i = 0; i < news.Length; i++)
             {
                 vehicles.Add(news[i].Id, new LocalVehicle(ref news[i]));
@@ -34,7 +36,7 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
 
             if (prediction == null)
             {
-                prediction = new PredictionWorld(ref game, world.TerrainByCellXY, vehicles);
+                prediction = new PredictionWorld(ref game, world.TerrainByCellXY, world.WeatherByCellXY, vehicles);
             }
             prediction.UpdateMove(m, ref game);
 
@@ -56,6 +58,9 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
                     break;
                 case DrawType.Predict:
                     DrawPredic(ref world, ref game, myPlayerID);
+                    break;
+                case DrawType.PredictRo:
+                    DrawPredicRo(ref world, ref game, myPlayerID);
                     break;
             }
 
@@ -152,7 +157,7 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             Graphics gr = Graphics.FromImage(map);
 
             int[,] data = RoCalculation.Calc(ref vehicles);
-            RoCalculation.DrawOneRo(ref gr, data, Color.Green);
+            RoCalculation.DrawOneRo(ref gr, data, Color.Green, 20);
 
             pictureBox1.Image = map;
             Update();
@@ -165,8 +170,29 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
 
             prediction.Predict();
             DrawTerrains(ref world, ref game, myPlayerID, ref gr);
-            DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, prediction.vehicles, Brushes.Red);
+            DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, prediction.ground_vehicles, Brushes.Red);
+            DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, prediction.air_vehicles, Brushes.Red);
             DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, vehicles, Brushes.Black);
+
+            pictureBox1.Image = map;
+            Update();
+        }
+
+        void DrawPredicRo(ref World world, ref Game game, long myPlayerID)
+        {
+            Bitmap map = new Bitmap((int)world.Width, (int)world.Height);
+            Graphics gr = Graphics.FromImage(map);
+
+            prediction.Predict();
+
+            int[,] data = RoCalculation.Calc(ref vehicles);
+            RoCalculation.DrawOneRo(ref gr, data, Color.Green, 20);
+            RoCalculation.DrawOneRo(ref gr, prediction.VehRo(), Color.Red, 4);
+
+            //DrawTerrains(ref world, ref game, myPlayerID, ref gr);
+            //DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, prediction.ground_vehicles, Brushes.Red);
+            //DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, prediction.air_vehicles, Brushes.Red);
+            //DrawVehiclesColor(ref world, ref game, myPlayerID, ref gr, vehicles, Brushes.Black);
 
             pictureBox1.Image = map;
             Update();

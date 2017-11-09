@@ -40,11 +40,11 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             return map;
         }
 
-        public static void DrawOneRo(ref Graphics gr, int[,] cals, Color color)
+        public static void DrawOneRo(ref Graphics gr, int[,] cals, Color color, int step)
         {
             int max = cals.GetMax();
             
-            int count = 1024 / 20;
+            int count = 1024 / step;
             for(int x = 0;x < count;x++)
             {
                 for(int y = 0;y < count;y++)
