@@ -15,7 +15,7 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
     enum DrawType { Vehicles, Concentrations, Predict, PredictRo};
     public partial class Visual : Form
     {
-        DrawType drawType = DrawType.PredictRo;
+        DrawType drawType = DrawType.Predict;
         Dictionary<long, LocalVehicle> vehicles = new Dictionary<long, LocalVehicle>();
         PredictionWorld prediction;
         public Visual()
@@ -27,8 +27,6 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
         {
             Vehicle[] news = world.NewVehicles;
 
-            
-
             for (int i = 0; i < news.Length; i++)
             {
                 vehicles.Add(news[i].Id, new LocalVehicle(ref news[i]));
@@ -38,7 +36,7 @@ namespace Com.CodeGame.CodeWars2017.DevKit.CSharpCgdk
             {
                 prediction = new PredictionWorld(ref game, world.TerrainByCellXY, world.WeatherByCellXY, vehicles);
             }
-            prediction.UpdateMove(m, ref game);
+            prediction.UpdateMove(m, ref game, myPlayerID);
 
             VehicleUpdate[] updates = world.VehicleUpdates;
             for (int i = 0; i < updates.Length; i++)

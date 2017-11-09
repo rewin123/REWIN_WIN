@@ -75,6 +75,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LocalMove.cs" />
     <Compile Include="LocalVehicle.cs" />
     <Compile Include="Model\ActionType.cs" />
     <Compile Include="Model\CircularUnit.cs" />
