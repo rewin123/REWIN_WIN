@@ -1,2 +1,3 @@
-/Debug/
+bin\Debug\
+obj\Debug\
 *.exe
